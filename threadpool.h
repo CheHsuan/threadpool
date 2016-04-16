@@ -10,7 +10,6 @@ typedef struct {
 	pthread_cond_t notify;
 	pthread_t *threads;
 	threadpool_task_t *queue;
-	struct timespec delay;
 	int thread_num;
 	int queue_size;
 	int head; 
