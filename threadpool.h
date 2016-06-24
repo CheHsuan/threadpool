@@ -15,11 +15,13 @@ typedef struct {
 	int head; 
 	int tail;
 	int count;
+	int busyCount;
 	int shutdown_flag;
 }threadpool_t;
 
 int threadpool_init(threadpool_t *pool, int thread_num, int queue_size);
 int threadpool_addQueue(threadpool_t *pool, void (*function)(void *), void *arg);
+int threadpool_sync(threadpool_t *pool);
 void thread_func(void *thread_arg);
 int threadpool_destroy(threadpool_t *pool);
 int threadpool_freeMem(threadpool_t *pool);

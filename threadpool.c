@@ -24,9 +24,13 @@ void thread_func(void *thread_arg)
 		pool->head += 1;
 		pool->head = (pool->head == pool->queue_size) ? 0 : pool->head;
 		pool->count -= 1;
+		pool->busyCount += 1;
 		pthread_mutex_unlock(&(pool->lock));
 		//execute the task
-		(*(task.function))(task.argument);	
+		(*(task.function))(task.argument);
+		pthread_mutex_lock(&(pool->lock));
+		pool->busyCount -= 1;	
+		pthread_mutex_unlock(&(pool->lock));
 	}
 }
 
@@ -57,6 +61,19 @@ int threadpool_addQueue(threadpool_t *pool, void (*function)(void *), void *arg)
 	return 0;
 }
 
+int threadpool_sync(threadpool_t *pool)
+{
+	while(1){
+		pthread_mutex_lock(&(pool->lock));
+		if(pool->busyCount == 0 && pool->count == 0){
+			pthread_mutex_unlock(&(pool->lock));
+			break;
+		}
+		pthread_mutex_unlock(&(pool->lock));
+	}
+	return 0;
+}
+
 int threadpool_init(threadpool_t *pool, int thread_num, int queue_size)
 {
 	if((thread_num <= 0) || (queue_size <= 0))
@@ -70,6 +87,7 @@ int threadpool_init(threadpool_t *pool, int thread_num, int queue_size)
 	pool->head = 0;
 	pool->tail = 0;
 	pool->count = 0;
+	pool->busyCount = 0;
 	pool->shutdown_flag = 0;
 	for(int i = 0; i < thread_num; i++)
 		pthread_create(&(pool->threads[i]), NULL,(void *)&thread_func, (void *)pool);
